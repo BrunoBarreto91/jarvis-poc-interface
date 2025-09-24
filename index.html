@@ -21,34 +21,91 @@
         <p>Aguardando sua anotação...</p>
     </div>
 
-    <script>
-        document.getElementById('jarvis-form').addEventListener('submit', function(event) {
-            event.preventDefault();
+<script>
+    document.getElementById('jarvis-form').addEventListener('submit', function(event) {
+        event.preventDefault();
 
-            const anotacao = document.getElementById('anotacao').value;
-            const resultadoDiv = document.getElementById('resultado');
-            resultadoDiv.innerHTML = '<p>Gerando plano... Por favor, aguarde.</p>';
+        const anotacao = document.getElementById('anotacao').value;
+        const resultadoDiv = document.getElementById('resultado');
+        resultadoDiv.innerHTML = '<p>Gerando plano... Por favor, aguarde.</p>';
 
-            // Substitua esta URL pelo URL do seu API Gateway (o que o Amplify gerou)
-            const apiUrl = "URL_DO_SEU_API_GATEWAY/validate-plan";
+        // Substitua esta URL pelo URL do seu API Gateway (o que o Amplify gerou)
+        const apiUrl = "https://main.d1qrld1s8zgy0w.amplifyapp.com/";
 
-            fetch(apiUrl, {
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: anotacao })
+        })
+        .then(response => {
+            // Verifica se a resposta foi bem-sucedida
+            if (!response.ok) {
+                throw new Error('Erro na requisição da API.');
+            }
+            // AQUI É A MUDANÇA: Agora lemos a resposta como JSON
+            return response.json();
+        })
+        .then(data => {
+            // Agora a variável 'data' já é um objeto JavaScript
+            // e o problema de caracteres já foi resolvido pela API.
+            // A gente exibe o plano formatado na tela.
+            // Vamos assumir que a sua API de geração de plano retorna um objeto
+            // com a propriedade 'plano_formatado' e 'plano_id'.
+            // Exemplo de retorno: { "plano_formatado": "...", "plano_id": "..." }
+
+            // Primeiro, exibimos o plano
+            let planoHtml = `
+                <pre>${data.plano_formatado}</pre>
+                <div style="margin-top: 20px;">
+                    <p>O que você achou do plano? É isso que você precisa?</p>
+                    <button id="btnAprovar" data-plano-id="${data.plano_id}">Aprovar</button>
+                    <button id="btnAjustar" data-plano-id="${data.plano_id}">Ajustar</button>
+                </div>
+            `;
+            resultadoDiv.innerHTML = planoHtml;
+
+            // Adiciona um listener para o botão de aprovar
+            document.getElementById('btnAprovar').addEventListener('click', () => {
+                validarPlano(data.plano_id, 'aprovar');
+            });
+
+            // Adiciona um listener para o botão de ajustar
+            document.getElementById('btnAjustar').addEventListener('click', () => {
+                // Aqui a gente pode adicionar a lógica para a sua próxima etapa:
+                // Abrir um modal, uma nova área de texto, etc.
+                alert('Função de ajuste em desenvolvimento. Fico aguardando suas instruções de ajuste!');
+            });
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            resultadoDiv.innerHTML = `<p style="color:red;">Ocorreu um erro ao gerar o plano. Por favor, tente novamente.</p>`;
+        });
+
+        // Esta é a nova função que vamos criar para chamar a sua outra Lambda de validação.
+        function validarPlano(planoId, validacaoTipo) {
+            const validacaoApiUrl = "URL_DO_SEU_API_GATEWAY/validate-plan"; // Use a URL da sua outra API de validação
+
+            fetch(validacaoApiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ text: anotacao })
+                body: JSON.stringify({ plano_id: planoId, validacao: validacaoTipo })
             })
-            .then(response => response.text())
+            .then(response => response.json())
             .then(data => {
-                resultadoDiv.innerHTML = `<pre>${data}</pre>`;
+                // Exibe a mensagem de sucesso da API de validação
+                alert(data.mensagem);
             })
             .catch(error => {
-                console.error('Erro:', error);
-                resultadoDiv.innerHTML = `<p style="color:red;">Ocorreu um erro ao gerar o plano. Por favor, tente novamente.</p>`;
+                console.error('Erro ao validar o plano:', error);
+                alert('Ocorreu um erro ao validar o plano.');
             });
-        });
-    </script>
+        }
+    });
+</script>
 
 </body>
 </html>
