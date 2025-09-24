@@ -69,6 +69,32 @@ fetch(apiUrl, {
             // com a propriedade 'plano_formatado' e 'plano_id'.
             // Exemplo de retorno: { "plano_formatado": "...", "plano_id": "..." }
 
+            form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const response = await fetch('https://hly171k9sf.execute-api.us-east-1.amazonaws.com/default/jarvis_poc_ingest_function', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ text: textoInput.value })
+  });
+
+  const data = await response.json(); // ← agora 'data' está definido
+
+  // Exibir o plano
+  let planoHtml = `
+    <pre>${data.plano_formatado}</pre>
+    <div style="margin-top: 20px;">
+      <p>O que você achou do plano? É isso que você precisa?</p>
+      <button id="btnAprovar" data-plano-id="${data.plano_id}">Aprovar</button>
+      <button id="btnAjustar" data-plano-id="${data.plano_id}">Ajustar</button>
+    </div>
+  `;
+  resultadoDiv.innerHTML = planoHtml;
+});
+
+
             // Primeiro, exibimos o plano
             let planoHtml = `
                 <pre>${data.plano_formatado}</pre>
@@ -118,7 +144,7 @@ fetch(apiUrl, {
                 alert('Ocorreu um erro ao validar o plano.');
             });
         }
-        
+
 </script>
 
 </body>
