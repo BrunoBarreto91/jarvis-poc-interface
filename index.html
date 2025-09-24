@@ -22,80 +22,24 @@
     </div>
 
 <script>
-    document.getElementById('jarvis-form').addEventListener('submit', function(event) {
+    document.getElementById('jarvis-form').addEventListener('submit', async function(event) {
         event.preventDefault();
 
         const anotacao = document.getElementById('anotacao').value;
         const resultadoDiv = document.getElementById('resultado');
         resultadoDiv.innerHTML = '<p>Gerando plano... Por favor, aguarde.</p>';
 
-        // Substitua esta URL pelo URL do seu API Gateway (o que o Amplify gerou)
-        const apiUrl = 'https://oel6biesnk.execute-api.us-east-1.amazonaws.com/prod/bedrock';
+        try {
+            const response = await fetch('https://hly171k9sf.execute-api.us-east-1.amazonaws.com/default/jarvis_poc_ingest_function', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: anotacao })
+            });
 
-fetch(apiUrl, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    message: 'Sua mensagem aqui'
-  })
-})
-.then(response => {
-  console.log('Status:', response.status);
-  console.log('Headers:', [...response.headers.entries()]);
-  return response.json();
-})
-.then(data => {
-  console.log('Resposta:', data);
-  
-  // Verificar se existem botões na resposta
-  if (data.buttons && Array.isArray(data.buttons)) {
-    console.log('Botões encontrados:', data.buttons);
-    // Renderizar botões no front-end
-    data.buttons.forEach(button => {
-      console.log(`Botão: ${button.text} - Ação: ${button.action}`);
-    });
-  }
-})
-.catch(error => {
-  console.error('Erro:', error);
-});
+            const data = await response.json();
 
-            // Agora a variável 'data' já é um objeto JavaScript
-            // e o problema de caracteres já foi resolvido pela API.
-            // A gente exibe o plano formatado na tela.
-            // Vamos assumir que a sua API de geração de plano retorna um objeto
-            // com a propriedade 'plano_formatado' e 'plano_id'.
-            // Exemplo de retorno: { "plano_formatado": "...", "plano_id": "..." }
-
-            form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const response = await fetch('https://hly171k9sf.execute-api.us-east-1.amazonaws.com/default/jarvis_poc_ingest_function', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ text: textoInput.value })
-  });
-
-  const data = await response.json(); // ← agora 'data' está definido
-
-  // Exibir o plano
-  let planoHtml = `
-    <pre>${data.plano_formatado}</pre>
-    <div style="margin-top: 20px;">
-      <p>O que você achou do plano? É isso que você precisa?</p>
-      <button id="btnAprovar" data-plano-id="${data.plano_id}">Aprovar</button>
-      <button id="btnAjustar" data-plano-id="${data.plano_id}">Ajustar</button>
-    </div>
-  `;
-  resultadoDiv.innerHTML = planoHtml;
-});
-
-
-            // Primeiro, exibimos o plano
             let planoHtml = `
                 <pre>${data.plano_formatado}</pre>
                 <div style="margin-top: 20px;">
@@ -106,44 +50,39 @@ fetch(apiUrl, {
             `;
             resultadoDiv.innerHTML = planoHtml;
 
-            // Adiciona um listener para o botão de aprovar
             document.getElementById('btnAprovar').addEventListener('click', () => {
                 validarPlano(data.plano_id, 'aprovar');
             });
 
-            // Adiciona um listener para o botão de ajustar
             document.getElementById('btnAjustar').addEventListener('click', () => {
-                // Aqui a gente pode adicionar a lógica para a sua próxima etapa:
-                // Abrir um modal, uma nova área de texto, etc.
                 alert('Função de ajuste em desenvolvimento. Fico aguardando suas instruções de ajuste!');
             });
-        })
-        .catch(error => {
+
+        } catch (error) {
             console.error('Erro:', error);
             resultadoDiv.innerHTML = `<p style="color:red;">Ocorreu um erro ao gerar o plano. Por favor, tente novamente.</p>`;
-        });
-
-        // Esta é a nova função que vamos criar para chamar a sua outra Lambda de validação.
-        function validarPlano(planoId, validacaoTipo) {
-            const validacaoApiUrl = "https://ee7rkklf2b.execute-api.us-east-1.amazonaws.com/default/jarvis_poc_validate_function"; // Use a URL da sua outra API de validação
-
-            fetch(validacaoApiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ plano_id: planoId, validacao: validacaoTipo })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Exibe a mensagem de sucesso da API de validação
-                alert(data.mensagem);
-            })
-            .catch(error => {
-                console.error('Erro ao validar o plano:', error);
-                alert('Ocorreu um erro ao validar o plano.');
-            });
         }
+    });
+
+    function validarPlano(planoId, validacaoTipo) {
+        const validacaoApiUrl = "https://ee7rkklf2b.execute-api.us-east-1.amazonaws.com/default/jarvis_poc_validate_function";
+
+        fetch(validacaoApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ plano_id: planoId, validacao: validacaoTipo })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.mensagem);
+        })
+        .catch(error => {
+            console.error('Erro ao validar o plano:', error);
+            alert('Ocorreu um erro ao validar o plano.');
+        });
+    }
 
 </script>
 
